@@ -17,43 +17,44 @@ import {
 import { cn } from '@/lib/utils'
 
 const schema = z.object({
-  name: z.string().min(1, 'Naam aavashyak cha').max(100),
+  name: z.string().min(1, 'Name is required').max(100),
   phone: z.string().max(15).optional(),
   address: z.string().max(200).optional(),
   openingBalanceType: z.enum(['none', 'due', 'advance']),
-  openingBalanceAmount: z.coerce.number().min(0).default(0),
 })
 
 type FormData = z.infer<typeof schema>
 
 export default function AddCustomerDialog({ storeId }: { storeId: string }) {
   const [open, setOpen] = useState(false)
+  const [balanceAmount, setBalanceAmount] = useState('0')
   const router = useRouter()
 
   const {
-  register,
-  handleSubmit,
-  reset,
-  watch,
-  setValue,
-  formState: { errors, isSubmitting },
-} = useForm<FormData>({
-  resolver: zodResolver(schema),
-  defaultValues: {
-    openingBalanceType: 'none',
-  },
-})
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      openingBalanceType: 'none',
+    },
+  })
 
   const balType = watch('openingBalanceType')
 
   async function onSubmit(data: FormData) {
     try {
-      // Calculate initial balance based on type
+      const amount = parseFloat(balanceAmount) || 0
+
       let initialBalance = 0
-      if (data.openingBalanceType === 'due' && data.openingBalanceAmount) {
-        initialBalance = -(data.openingBalanceAmount)   // negative = due
-      } else if (data.openingBalanceType === 'advance' && data.openingBalanceAmount) {
-        initialBalance = data.openingBalanceAmount       // positive = advance
+      if (data.openingBalanceType === 'due') {
+        initialBalance = -amount
+      } else if (data.openingBalanceType === 'advance') {
+        initialBalance = amount
       }
 
       await createCustomer({
@@ -64,13 +65,20 @@ export default function AddCustomerDialog({ storeId }: { storeId: string }) {
         initial_balance: initialBalance,
       })
 
-      toast.success(`${data.name} customer add bhayo!`)
+      toast.success(`${data.name} added successfully!`)
       reset()
+      setBalanceAmount('0')
       setOpen(false)
       router.refresh()
     } catch (err: any) {
-      toast.error(err.message || 'Customer add garna sakiyena')
+      toast.error(err.message || 'Failed to add customer')
     }
+  }
+
+  function handleClose() {
+    reset()
+    setBalanceAmount('0')
+    setOpen(false)
   }
 
   return (
@@ -86,10 +94,8 @@ export default function AddCustomerDialog({ storeId }: { storeId: string }) {
 
         {/* Gradient header */}
         <div className="bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 px-6 py-5 relative overflow-hidden">
-          {/* Decorative circles */}
           <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/5" />
           <div className="absolute -bottom-8 -left-4 w-28 h-28 rounded-full bg-white/5" />
-
           <div className="relative flex items-center gap-3">
             <div className="w-10 h-10 bg-white/15 border border-white/20 rounded-xl flex items-center justify-center">
               <UserPlus className="w-5 h-5 text-white" />
@@ -99,7 +105,7 @@ export default function AddCustomerDialog({ storeId }: { storeId: string }) {
                 Add New Customer
               </h2>
               <p className="text-xs text-blue-200 mt-0.5">
-                Customer details 
+                Fill in the customer details below
               </p>
             </div>
           </div>
@@ -111,11 +117,13 @@ export default function AddCustomerDialog({ storeId }: { storeId: string }) {
           {/* Name */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Puura Naam
+              Full Name
             </label>
             <div className={cn(
               'flex items-center gap-2.5 bg-slate-50 border rounded-lg px-3 py-2.5 transition-colors',
-              errors.name ? 'border-red-300' : 'border-slate-200 focus-within:border-blue-400'
+              errors.name
+                ? 'border-red-300'
+                : 'border-slate-200 focus-within:border-blue-400'
             )}>
               <User className="w-4 h-4 text-slate-400 shrink-0" />
               <input
@@ -132,12 +140,14 @@ export default function AddCustomerDialog({ storeId }: { storeId: string }) {
           {/* Phone */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Phone Number
-              <span className="text-slate-400 font-normal normal-case ml-1">(optional)</span>
+              Phone{' '}
+              <span className="text-slate-400 font-normal normal-case">
+                (optional)
+              </span>
             </label>
             <div className="flex gap-2">
               <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 rounded-lg px-3 py-2.5 shrink-0">
-                <span className="text-xs font-semibold text-slate-600">🇳🇵</span>
+                <span className="text-sm">🇳🇵</span>
                 <span className="text-sm text-slate-600 font-medium">+977</span>
               </div>
               <div className="flex-1 flex items-center gap-2.5 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 focus-within:border-blue-400 transition-colors">
@@ -154,14 +164,16 @@ export default function AddCustomerDialog({ storeId }: { storeId: string }) {
           {/* Address */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Address
-              <span className="text-slate-400 font-normal normal-case ml-1">(optional)</span>
+              Address{' '}
+              <span className="text-slate-400 font-normal normal-case">
+                (optional)
+              </span>
             </label>
             <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 focus-within:border-blue-400 transition-colors">
               <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
               <input
                 {...register('address')}
-                placeholder="e.g. Dhangadhi, Kailali"
+                placeholder="e.g. Thamel, Kathmandu"
                 className="flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
               />
             </div>
@@ -170,19 +182,21 @@ export default function AddCustomerDialog({ storeId }: { storeId: string }) {
           {/* Opening balance */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Starting Balance
-              <span className="text-slate-400 font-normal normal-case ml-1">(optional)</span>
+              Opening Balance{' '}
+              <span className="text-slate-400 font-normal normal-case">
+                (optional)
+              </span>
             </label>
             <p className="text-xs text-slate-400">
-              If yo customer ko pahila dekhi udharo cha bhane yaha fill garnus
+              If this customer already has a balance before joining
             </p>
 
             {/* Toggle */}
             <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-lg">
               {[
-                { key: 'none',    label: 'Fresh Start', color: '' },
-                { key: 'due',     label: 'Credit',   color: 'due' },
-                { key: 'advance', label: 'Advance', color: 'adv' },
+                { key: 'none',    label: 'Fresh Start' },
+                { key: 'due',     label: 'Has Due' },
+                { key: 'advance', label: 'Has Advance' },
               ].map(opt => (
                 <button
                   key={opt.key}
@@ -204,7 +218,7 @@ export default function AddCustomerDialog({ storeId }: { storeId: string }) {
               ))}
             </div>
 
-            {/* Amount input — only when due or advance */}
+            {/* Amount input */}
             {balType !== 'none' && (
               <div className={cn(
                 'flex items-center gap-2.5 border rounded-lg px-3 py-2.5 transition-colors',
@@ -217,16 +231,19 @@ export default function AddCustomerDialog({ storeId }: { storeId: string }) {
                   balType === 'due' ? 'text-red-400' : 'text-green-400'
                 )} />
                 <input
-                  {...register('openingBalanceAmount')}
                   type="number"
+                  min="0"
+                  step="0.01"
+                  value={balanceAmount}
+                  onChange={e => setBalanceAmount(e.target.value)}
                   placeholder="0"
                   className="flex-1 bg-transparent text-sm placeholder:text-slate-400 focus:outline-none font-medium"
                 />
                 <span className={cn(
-                  'text-xs font-medium',
+                  'text-xs font-medium shrink-0',
                   balType === 'due' ? 'text-red-500' : 'text-green-500'
                 )}>
-                  {balType === 'due' ? 'Customer le tirnu cha' : 'Customer le diyeko cha'}
+                  {balType === 'due' ? 'Customer owes you' : 'Customer paid ahead'}
                 </span>
               </div>
             )}
@@ -238,7 +255,7 @@ export default function AddCustomerDialog({ storeId }: { storeId: string }) {
               type="button"
               variant="outline"
               className="flex-1"
-              onClick={() => { reset(); setOpen(false) }}
+              onClick={handleClose}
             >
               Cancel
             </Button>
@@ -254,8 +271,8 @@ export default function AddCustomerDialog({ storeId }: { storeId: string }) {
               Add Customer
             </button>
           </div>
-        </form>
 
+        </form>
       </DialogContent>
     </Dialog>
   )
