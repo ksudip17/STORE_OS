@@ -21,7 +21,7 @@ const schema = z.object({
   phone: z.string().max(15).optional(),
   address: z.string().max(200).optional(),
   openingBalanceType: z.enum(['none', 'due', 'advance']),
-  openingBalanceAmount: z.coerce.number().min(0).optional(),
+  openingBalanceAmount: z.coerce.number().min(0).default(0),
 })
 
 type FormData = z.infer<typeof schema>
@@ -31,19 +31,18 @@ export default function AddCustomerDialog({ storeId }: { storeId: string }) {
   const router = useRouter()
 
   const {
-    register,
-    handleSubmit,
-    reset,
-    watch,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      openingBalanceType: 'none',
-      openingBalanceAmount: 0,
-    },
-  })
+  register,
+  handleSubmit,
+  reset,
+  watch,
+  setValue,
+  formState: { errors, isSubmitting },
+} = useForm<FormData>({
+  resolver: zodResolver(schema),
+  defaultValues: {
+    openingBalanceType: 'none',
+  },
+})
 
   const balType = watch('openingBalanceType')
 
