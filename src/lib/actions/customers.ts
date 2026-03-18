@@ -25,7 +25,6 @@ export async function getStoreCustomers(storeId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
 
-  // RLS handles this, but we also verify store ownership explicitly
   const { data: store } = await supabase
     .from('stores')
     .select('id')
@@ -50,8 +49,8 @@ export async function createCustomer(formData: {
   name: string
   phone: string
   address: string
+  initial_balance?: number
 }) {
-  // Verify store belongs to user before inserting
   await verifyStoreOwnership(formData.store_id)
 
   const supabase = await createClient()
@@ -62,6 +61,7 @@ export async function createCustomer(formData: {
       name: formData.name,
       phone: formData.phone || null,
       address: formData.address || null,
+      balance: formData.initial_balance ?? 0,
     })
 
   if (error) throw new Error(error.message)
@@ -70,8 +70,29 @@ export async function createCustomer(formData: {
   revalidatePath('/dashboard')
 }
 
+export async function updateCustomer(
+  customerId: string,
+  storeId: string,
+  formData: { name: string; phone: string; address: string }
+) {
+  await verifyStoreOwnership(storeId)
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('customers')
+    .update({
+      name: formData.name,
+      phone: formData.phone || null,
+      address: formData.address || null,
+    })
+    .eq('id', customerId)
+
+  if (error) throw new Error(error.message)
+  revalidatePath(`/store/${storeId}`)
+  revalidatePath('/customers')
+}
+
 export async function deleteCustomer(customerId: string, storeId: string) {
-  // Verify store ownership before deleting
   await verifyStoreOwnership(storeId)
 
   const supabase = await createClient()
@@ -86,13 +107,11 @@ export async function deleteCustomer(customerId: string, storeId: string) {
   revalidatePath('/dashboard')
 }
 
-// Get ALL customers across all stores for a user
 export async function getAllCustomers() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
 
-  // Get user's store IDs first
   const { data: stores } = await supabase
     .from('stores')
     .select('id, name')
@@ -108,7 +127,6 @@ export async function getAllCustomers() {
 
   if (error) { console.error(error); return [] }
 
-  // Attach store name to each customer
   return data.map(c => ({
     ...c,
     storeName: stores.find(s => s.id === c.store_id)?.name ?? '',

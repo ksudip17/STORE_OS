@@ -16,6 +16,8 @@ import {
   ArrowLeftRight,
 } from 'lucide-react'
 import type { Store, Customer, Transaction } from '@/lib/types'
+import StoreActionsMenu from '@/components/store/StoreActionsMenu'
+
 
 type BalanceFilter = 'all' | 'due' | 'advance' | 'clear'
 
@@ -80,22 +82,24 @@ export default function StoreDetailClient({
     <div className="flex flex-col h-screen">
       {/* Top bar */}
       <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 text-slate-500" />
-          </Link>
-          <div>
-            <h1 className="text-base font-semibold text-slate-900">
-              {store.name}
-            </h1>
-            <p className="text-xs text-slate-400">{store.type}</p>
-          </div>
-        </div>
-        <AddCustomerDialog storeId={store.id} />
-      </div>
+  <div className="flex items-center gap-3">
+    <Link
+      href="/dashboard"
+      className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+    >
+      <ArrowLeft className="w-4 h-4 text-slate-500" />
+    </Link>
+    <div>
+      <h1 className="text-base font-semibold text-slate-900">
+        {store.name}
+      </h1>
+      <p className="text-xs text-slate-400">{store.type}</p>
+    </div>
+    {/* ← Add this */}
+    <StoreActionsMenu store={store} />
+  </div>
+  <AddCustomerDialog storeId={store.id} />
+</div>
 
       {/* Stats row */}
       <div className="grid grid-cols-4 gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200 shrink-0">
@@ -204,6 +208,7 @@ export default function StoreDetailClient({
               customer={selectedCustomer}
               transactions={selectedTx}
               storeId={store.id}
+              store={store}
               onClose={() => setSelectedId(null)}
             />
           </div>

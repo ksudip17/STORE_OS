@@ -10,11 +10,17 @@ import { Phone, MapPin, Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Customer, Transaction } from '@/lib/types'
 import { format } from 'date-fns'
+import DownloadPDFButton from './CustomerPDF'
+import { Pencil } from 'lucide-react'
+import EditCustomerDialog from './EditCustomerDialog'
+
+
 
 interface Props {
   customer: Customer
   transactions: Transaction[]
   storeId: string
+  store: Store          
   onClose: () => void
 }
 
@@ -22,6 +28,7 @@ export default function CustomerPanel({
   customer,
   transactions,
   storeId,
+  store,          
   onClose,
 }: Props) {
   const router = useRouter()
@@ -47,26 +54,31 @@ export default function CustomerPanel({
     <div className="flex flex-col h-full bg-white border-l border-slate-200">
       {/* Panel header */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-slate-200">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center">
-            <span className="text-sm font-semibold text-blue-600">
-              {getInitials(customer.name)}
-            </span>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-900">
-              {customer.name}
-            </p>
-            <p className="text-xs text-slate-400">Customer details</p>
-          </div>
-        </div>
-        <button
-          onClick={onClose}
-          className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-        >
-          <X className="w-4 h-4 text-slate-400" />
-        </button>
-      </div>
+  <div className="flex items-center gap-3">
+    <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center">
+      <span className="text-sm font-semibold text-blue-600">
+        {getInitials(customer.name)}
+      </span>
+    </div>
+    <div>
+      <p className="text-sm font-semibold text-slate-900">
+        {customer.name}
+      </p>
+      <p className="text-xs text-slate-400">Customer details</p>
+    </div>
+  </div>
+
+  {/* Right side — edit + close */}
+  <div className="flex items-center gap-1">
+    <EditCustomerDialog customer={customer} storeId={storeId} />
+    <button
+      onClick={onClose}
+      className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+    >
+      <X className="w-4 h-4 text-slate-400" />
+    </button>
+  </div>
+</div>
 
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -110,22 +122,28 @@ export default function CustomerPanel({
 
         {/* Action buttons */}
         <div className="space-y-2">
-          <AddTransactionDialog customer={customer} storeId={storeId} />
-          {isDue && (
-            <Button
-              onClick={handleFullPay}
-              disabled={paying}
-              variant="outline"
-              size="sm"
-              className="w-full border-green-200 text-green-600 hover:bg-green-50"
-            >
-              {paying
-                ? <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                : null}
-              Full Pay — Clear Balance
-            </Button>
-          )}
-        </div>
+  <AddTransactionDialog customer={customer} storeId={storeId} />
+  {isDue && (
+    <Button
+      onClick={handleFullPay}
+      disabled={paying}
+      variant="outline"
+      size="sm"
+      className="w-full border-green-200 text-green-600 hover:bg-green-50"
+    >
+      {paying
+        ? <Loader2 className="w-4 h-4 animate-spin mr-2" />
+        : null}
+      Full Pay — Clear Balance
+    </Button>
+  )}
+  {/* PDF export — needs store prop */}
+  <DownloadPDFButton
+    customer={customer}
+    transactions={transactions}
+    store={store}
+  />
+</div>
 
         {/* Transaction history */}
         <div>

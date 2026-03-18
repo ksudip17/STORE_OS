@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -12,40 +13,35 @@ import {
   ArrowLeftRight,
   LogOut,
   ChevronRight,
+  UserCircle,
+  Menu,
+  X,
 } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
+import Logo from '@/components/shared/Logo'
+
 
 const navItems = [
-  {
-    label: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    label: 'Stores',
-    href: '/stores',
-    icon: Store,
-  },
-  {
-    label: 'Customers',
-    href: '/customers',
-    icon: Users,
-  },
-  {
-    label: 'Transactions',
-    href: '/transactions',
-    icon: ArrowLeftRight,
-  },
+  { label: 'Dashboard',    href: '/dashboard',    icon: LayoutDashboard },
+  { label: 'Customers',    href: '/customers',    icon: Users },
+  { label: 'Transactions', href: '/transactions', icon: ArrowLeftRight },
+  { label: 'Profile',      href: '/profile',      icon: UserCircle },
 ]
 
-export default function Sidebar({ user }: { user: User }) {
+function SidebarContent({
+  user,
+  onClose,
+}: {
+  user: User
+  onClose?: () => void
+}) {
   const pathname = usePathname()
-  const router = useRouter()
+  const router   = useRouter()
   const supabase = createClient()
 
   const displayName = user.user_metadata?.full_name || user.email || 'User'
-  const avatarUrl = user.user_metadata?.avatar_url
-  const initials = getInitials(displayName)
+  const avatarUrl   = user.user_metadata?.avatar_url
+  const initials    = getInitials(displayName)
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -55,32 +51,34 @@ export default function Sidebar({ user }: { user: User }) {
   }
 
   return (
-    <aside className="w-56 bg-white border-r border-slate-200 flex flex-col shrink-0 h-full">
+    <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="px-4 py-5 border-b border-slate-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
-            <Store className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-900">StoreOS</p>
-            <p className="text-xs text-slate-400">Management</p>
-          </div>
-        </div>
-      </div>
+      <div className="px-4 py-5 border-b border-slate-100 flex items-center justify-between">
+  <Logo size="sm" />
+  {onClose && (
+    <button
+      onClick={onClose}
+      className="p-1.5 rounded-lg hover:bg-slate-100 lg:hidden"
+    >
+      <X className="w-4 h-4 text-slate-500" />
+    </button>
+  )}
+</div>
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         <p className="text-xs font-medium text-slate-400 px-2 mb-2 uppercase tracking-wider">
           Menu
         </p>
-        {navItems.map((item) => {
-          const isActive = pathname === item.href ||
+        {navItems.map(item => {
+          const isActive =
+            pathname === item.href ||
             pathname.startsWith(item.href + '/')
           return (
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
               className={cn(
                 'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all group',
                 isActive
@@ -90,7 +88,9 @@ export default function Sidebar({ user }: { user: User }) {
             >
               <item.icon className={cn(
                 'w-4 h-4 shrink-0',
-                isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
+                isActive
+                  ? 'text-blue-600'
+                  : 'text-slate-400 group-hover:text-slate-600'
               )} />
               {item.label}
               {isActive && (
@@ -132,6 +132,43 @@ export default function Sidebar({ user }: { user: User }) {
           </button>
         </div>
       </div>
-    </aside>
+    </div>
+  )
+}
+
+export default function Sidebar({ user }: { user: User }) {
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  return (
+    <>
+      {/* Mobile hamburger button */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg border border-slate-200 shadow-sm"
+      >
+        <Menu className="w-4 h-4 text-slate-600" />
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/40 z-40"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile drawer */}
+      <aside className={cn(
+        'lg:hidden fixed left-0 top-0 h-full w-64 bg-white z-50 shadow-xl transition-transform duration-200',
+        mobileOpen ? 'translate-x-0' : '-translate-x-full'
+      )}>
+        <SidebarContent user={user} onClose={() => setMobileOpen(false)} />
+      </aside>
+
+      {/* Desktop sidebar — always visible */}
+      <aside className="hidden lg:flex w-56 bg-white border-r border-slate-200 flex-col shrink-0 h-full">
+        <SidebarContent user={user} />
+      </aside>
+    </>
   )
 }
