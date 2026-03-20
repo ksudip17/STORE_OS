@@ -43,7 +43,7 @@ export async function getCustomers() {
 export async function createStore(formData: {
   name: string
   type: StoreType
-  description: string
+  description?: string
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -66,7 +66,7 @@ export async function createStore(formData: {
 
 export async function updateStore(
   storeId: string,
-  formData: { name: string; type: StoreType; description: string }
+  formData: { name: string; type: StoreType; description?: string }
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

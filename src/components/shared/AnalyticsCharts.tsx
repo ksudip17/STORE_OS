@@ -134,7 +134,7 @@ export function TopDueChart({ data }: { data: TopDue[] }) {
             width={80}
           />
           <Tooltip
-            formatter={(v: number) => [`₹${v.toLocaleString('en-IN')}`, 'Due']}
+            formatter={(v: any) => [`₹${Number(v).toLocaleString('en-IN')}`, 'Due']}
             contentStyle={{
               fontSize: 12,
               borderRadius: 8,
@@ -179,8 +179,8 @@ export function DistributionPieChart({ data }: { data: Distribution[] }) {
             ))}
           </Pie>
           <Tooltip
-            formatter={(v: number, name: string) => [
-              `${v} customers (${total ? Math.round(v / total * 100) : 0}%)`,
+            formatter={(v: any, name: any) => [
+              `${v} customers (${total ? Math.round(Number(v) / total * 100) : 0}%)`,
               name
             ]}
             contentStyle={{
