@@ -17,8 +17,9 @@ export default async function DashboardLayout({
     <div className="flex h-screen bg-slate-50 overflow-hidden">
       <Sidebar user={user} />
       <main className="flex-1 overflow-y-auto relative">
+        {/* Mobile top padding so hamburger doesn't overlap page title */}
+        <div className="h-12 lg:hidden" />
         {children}
-        {/* AI chat bubble — available on every page */}
         <AIChat />
       </main>
     </div>

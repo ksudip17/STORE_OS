@@ -142,12 +142,13 @@ export default function Sidebar({ user }: { user: User }) {
   return (
     <>
       {/* Mobile hamburger button */}
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg border border-slate-200 shadow-sm"
-      >
-        <Menu className="w-4 h-4 text-slate-600" />
-      </button>
+      {/* Mobile hamburger button */}
+<button
+  onClick={() => setMobileOpen(true)}
+  className="lg:hidden fixed top-3 left-3 z-50 p-2 bg-white rounded-lg border border-slate-200 shadow-sm"
+>
+  <Menu className="w-4 h-4 text-slate-600" />
+</button>
 
       {/* Mobile overlay */}
       {mobileOpen && (
