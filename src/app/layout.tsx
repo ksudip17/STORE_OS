@@ -7,7 +7,10 @@ const geist = Geist({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'StoreOS — Smart Store Management',
-  description: 'Manage multiple stores, customers, and transactions',
+  description: 'Track customer credit, manage stores, understand your business.',
+  icons: {
+    icon: '/icon',
+  },
 }
 
 export default function RootLayout({
