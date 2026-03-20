@@ -76,18 +76,18 @@ export default function LandingPage() {
   const supabase = createClient()
 
   async function signInWithGoogle() {
-    setLoading(true)
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-    if (error) {
-      toast.error(error.message)
-      setLoading(false)
-    }
+  setLoading(true)
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/auth/callback`,
+    },
+  })
+  if (error) {
+    toast.error(error.message)
+    setLoading(false)
   }
+}
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
