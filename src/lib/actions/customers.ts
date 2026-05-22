@@ -3,7 +3,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-// Helper — verify store belongs to current user
 async function verifyStoreOwnership(storeId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -78,6 +77,17 @@ export async function updateCustomer(
   await verifyStoreOwnership(storeId)
 
   const supabase = await createClient()
+
+  // Fix: verify customer belongs to this store before updating
+  const { data: customer } = await supabase
+    .from('customers')
+    .select('id')
+    .eq('id', customerId)
+    .eq('store_id', storeId)
+    .single()
+
+  if (!customer) throw new Error('Customer not found in this store')
+
   const { error } = await supabase
     .from('customers')
     .update({
@@ -96,6 +106,17 @@ export async function deleteCustomer(customerId: string, storeId: string) {
   await verifyStoreOwnership(storeId)
 
   const supabase = await createClient()
+
+  // Fix: verify customer actually belongs to this store before deleting
+  const { data: customer } = await supabase
+    .from('customers')
+    .select('id')
+    .eq('id', customerId)
+    .eq('store_id', storeId)
+    .single()
+
+  if (!customer) throw new Error('Customer not found in this store')
+
   const { error } = await supabase
     .from('customers')
     .delete()

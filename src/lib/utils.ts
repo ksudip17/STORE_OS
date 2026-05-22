@@ -1,29 +1,22 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
-// Shadcn's cn helper
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Currency formatter for Indian Rupees
+// Nepali Rupee formatter — fixes ₹ vs Rs. inconsistency
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(Math.abs(amount))
+  return 'Rs. ' + Math.abs(amount).toLocaleString('en-NP')
 }
 
-// Short currency (₹1.2K, ₹3.4L)
 export function formatCurrencyShort(amount: number): string {
   const abs = Math.abs(amount)
-  if (abs >= 100000) return `₹${(abs / 100000).toFixed(1)}L`
-  if (abs >= 1000) return `₹${(abs / 1000).toFixed(1)}K`
-  return `₹${abs}`
+  if (abs >= 100000) return `Rs. ${(abs / 100000).toFixed(1)}L`
+  if (abs >= 1000) return `Rs. ${(abs / 1000).toFixed(1)}K`
+  return `Rs. ${abs}`
 }
 
-// Get initials from name
 export function getInitials(name: string): string {
   return name
     .split(' ')
@@ -33,7 +26,6 @@ export function getInitials(name: string): string {
     .slice(0, 2)
 }
 
-// Balance status
 export function getBalanceStatus(balance: number) {
   if (balance < 0) return { label: 'Due', color: 'destructive' as const }
   if (balance > 0) return { label: 'Advance', color: 'default' as const }

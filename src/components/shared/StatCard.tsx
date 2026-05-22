@@ -21,7 +21,8 @@ export default function StatCard({
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-5">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm text-slate-500">{label}</p>
+        {/* Fix: text-slate-600 instead of text-slate-500 — passes WCAG AA contrast */}
+        <p className="text-sm text-slate-600">{label}</p>
         <div className={cn(
           'w-9 h-9 rounded-lg flex items-center justify-center',
           variant === 'danger'  && 'bg-red-50',
@@ -49,7 +50,8 @@ export default function StatCard({
       </p>
 
       {trend && (
-        <p className="text-xs text-slate-400 mt-1">{trend}</p>
+        // Fix: text-slate-500 instead of text-slate-400 — passes WCAG AA
+        <p className="text-xs text-slate-500 mt-1">{trend}</p>
       )}
     </div>
   )

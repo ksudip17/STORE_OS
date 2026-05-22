@@ -3,18 +3,14 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import type { Store, Customer, Transaction, Profile } from './types'
 
 interface AppState {
-  // Data
   profile: Profile | null
   stores: Store[]
   customers: Customer[]
   transactions: Transaction[]
-
-  // UI state
   activeStoreId: string | null
   selectedCustomerId: string | null
   isLoading: boolean
 
-  // Actions
   setProfile: (p: Profile | null) => void
   setStores: (s: Store[]) => void
   setCustomers: (c: Customer[]) => void
@@ -23,7 +19,6 @@ interface AppState {
   setSelectedCustomer: (id: string | null) => void
   setLoading: (v: boolean) => void
 
-  // Derived helpers
   getStoreCustomers: (storeId: string) => Customer[]
   getCustomerTransactions: (customerId: string) => Transaction[]
   getTotalDue: () => number
@@ -67,8 +62,14 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'store-os',
-      storage: createJSONStorage(() => localStorage),
-      // Only persist UI state, not data (data comes from Supabase)
+      // Fix: safe localStorage access — prevents SSR crash
+      storage: createJSONStorage(() =>
+        typeof window !== 'undefined' ? localStorage : {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        }
+      ),
       partialize: (state) => ({
         activeStoreId: state.activeStoreId,
       }),

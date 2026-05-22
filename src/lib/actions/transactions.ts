@@ -27,6 +27,26 @@ export async function addTransaction(formData: {
   storeId: string
 }) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // Fix: verify customer belongs to a store owned by this user
+  const { data: customer } = await supabase
+    .from('customers')
+    .select('store_id')
+    .eq('id', formData.customer_id)
+    .single()
+
+  if (!customer) throw new Error('Customer not found')
+
+  const { data: store } = await supabase
+    .from('stores')
+    .select('id')
+    .eq('id', customer.store_id)
+    .eq('user_id', user.id)
+    .single()
+
+  if (!store) throw new Error('Access denied')
 
   const { storeId, ...insertData } = formData
 
@@ -38,10 +58,9 @@ export async function addTransaction(formData: {
     })
 
   if (error) throw new Error(error.message)
-
-  // Revalidate both store page and dashboard
   revalidatePath(`/store/${storeId}`)
   revalidatePath('/dashboard')
+  revalidatePath('/transactions')
 }
 
 export async function addFullPayment(
@@ -50,8 +69,27 @@ export async function addFullPayment(
   storeId: string
 ) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
 
-  // balance is negative for due, so abs it
+  // Fix: verify customer belongs to a store owned by this user
+  const { data: customer } = await supabase
+    .from('customers')
+    .select('store_id')
+    .eq('id', customerId)
+    .single()
+
+  if (!customer) throw new Error('Customer not found')
+
+  const { data: store } = await supabase
+    .from('stores')
+    .select('id')
+    .eq('id', customer.store_id)
+    .eq('user_id', user.id)
+    .single()
+
+  if (!store) throw new Error('Access denied')
+
   const amount = Math.abs(balance)
 
   const { error } = await supabase
@@ -67,4 +105,5 @@ export async function addFullPayment(
   if (error) throw new Error(error.message)
   revalidatePath(`/store/${storeId}`)
   revalidatePath('/dashboard')
+  revalidatePath('/transactions')
 }

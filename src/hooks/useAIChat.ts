@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 export interface Message {
   id: string
@@ -13,16 +13,21 @@ export function useAIChat() {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "Hi! I'm your business assistant. Ask me anything about your stores — like \"who owes me the most?\" or \"how much did I collect this month?\" or \"write a reminder for Ramesh bhai\".",
+      content: "Hi! I'm your business assistant. Ask me anything about your stores — like \"who owes me the most?\" or \"how much did I collect this month?\" or \"write a reminder for Samir Thapa\".",
       timestamp: new Date(),
     }
   ])
   const [isLoading, setIsLoading] = useState(false)
 
+  // Fix: ref to access latest messages without making it a useCallback dependency
+  const messagesRef = useRef(messages)
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return
 
-    // Add user message immediately
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -30,7 +35,6 @@ export function useAIChat() {
       timestamp: new Date(),
     }
 
-    // Add loading placeholder
     const loadingMsg: Message = {
       id: 'loading',
       role: 'assistant',
@@ -43,8 +47,8 @@ export function useAIChat() {
     setIsLoading(true)
 
     try {
-      // Build history for context (exclude welcome + loading)
-      const history = messages
+      // Fix: use ref to get latest messages — no stale closure
+      const history = messagesRef.current
         .filter(m => m.id !== 'welcome' && !m.isLoading)
         .map(m => ({ role: m.role, content: m.content }))
 
@@ -55,10 +59,8 @@ export function useAIChat() {
       })
 
       const data = await res.json()
-
       if (!res.ok) throw new Error(data.error || 'Request failed')
 
-      // Replace loading with real response
       setMessages(prev => prev.map(m =>
         m.id === 'loading'
           ? {
@@ -85,7 +87,7 @@ export function useAIChat() {
     } finally {
       setIsLoading(false)
     }
-  }, [messages, isLoading])
+  }, [isLoading]) // Fix: only depends on isLoading, not messages
 
   const clearChat = useCallback(() => {
     setMessages([{

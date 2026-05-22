@@ -8,7 +8,15 @@ const groq = new Groq({
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Auth check
+    // Fix: guard missing env var before any logic
+    if (!process.env.GROQ_API_KEY) {
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable' },
+        { status: 503 }
+      )
+    }
+
+    // Auth check
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -20,7 +28,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 })
     }
 
-    // 2. Fetch business data
+    // Fetch this user's data only
     const { data: stores } = await supabase
       .from('stores')
       .select('*')
@@ -28,6 +36,7 @@ export async function POST(req: NextRequest) {
 
     const storeIds = stores?.map(s => s.id) ?? []
 
+    // Fix: guard .in() against empty arrays
     const { data: customers } = storeIds.length
       ? await supabase
           .from('customers')
@@ -46,7 +55,7 @@ export async function POST(req: NextRequest) {
           .limit(100)
       : { data: [] }
 
-    // 3. Build context
+    // Build context
     const totalDue = customers
       ?.filter(c => c.balance < 0)
       .reduce((s, c) => s + Math.abs(c.balance), 0) ?? 0
@@ -84,45 +93,43 @@ export async function POST(req: NextRequest) {
         type: tx.type,
         amount: tx.amount,
         product: tx.product,
-        date: new Date(tx.date).toLocaleDateString('en-IN'),
+        date: new Date(tx.date).toLocaleDateString('en-NP'),
       }))
 
-    // 4. System prompt
     const systemPrompt = `You are a smart business assistant for a store management app called StoreOS.
 You are talking to the owner of these stores. Be concise, helpful, and specific.
-Always use Indian Rupee (₹) for amounts. Keep answers under 4 sentences unless asked for a list.
+Always use Nepali Rupee (Rs.) for amounts. Keep answers under 4 sentences unless asked for a list.
 If asked to generate a reminder message, write it in a friendly but firm tone.
 
 === BUSINESS DATA ===
 Owner: ${user.email}
 Stores: ${JSON.stringify(stores?.map(s => ({ name: s.name, type: s.type })))}
 Total customers: ${customers?.length ?? 0}
-Total outstanding due: ₹${totalDue.toLocaleString('en-IN')}
-Total advance balance: ₹${totalAdvance.toLocaleString('en-IN')}
+Total outstanding due: Rs. ${totalDue.toLocaleString('en-NP')}
+Total advance balance: Rs. ${totalAdvance.toLocaleString('en-NP')}
 
 Top customers by due:
 ${topDueCustomers.map(c =>
-  `- ${c.name} (${c.store}): ₹${c.due.toLocaleString('en-IN')} due | Phone: ${c.phone || 'N/A'}`
+  `- ${c.name} (${c.store}): Rs. ${c.due.toLocaleString('en-NP')} due | Phone: ${c.phone || 'N/A'}`
 ).join('\n')}
 
-This month's sales: ₹${monthlySales.toLocaleString('en-IN')}
-This month's payments received: ₹${monthlyPayments.toLocaleString('en-IN')}
+This month sales: Rs. ${monthlySales.toLocaleString('en-NP')}
+This month payments received: Rs. ${monthlyPayments.toLocaleString('en-NP')}
 
 Recent transactions:
 ${recentTransactions.map(tx =>
-  `- ${tx.customer}: ${tx.type} ₹${tx.amount} ${tx.product ? `(${tx.product})` : ''} on ${tx.date}`
+  `- ${tx.customer}: ${tx.type} Rs. ${tx.amount} ${tx.product ? `(${tx.product})` : ''} on ${tx.date}`
 ).join('\n')}
 
 All customers:
 ${(customers ?? []).map(c => {
   const store = stores?.find(s => s.id === c.store_id)
-  return `- ${c.name} | ${store?.name} | Balance: ₹${c.balance} | Phone: ${c.phone || 'N/A'}`
+  return `- ${c.name} | ${store?.name} | Balance: Rs. ${c.balance} | Phone: ${c.phone || 'N/A'}`
 }).join('\n')}
 === END DATA ===`
 
-    // 5. Call Groq — OpenAI-compatible API
     const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',  // free, very capable
+      model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: systemPrompt },
         ...(history ?? []).slice(-6).map((h: any) => ({
@@ -143,7 +150,7 @@ ${(customers ?? []).map(c => {
   } catch (err: any) {
     console.error('AI route error:', err)
     return NextResponse.json(
-      { error: err.message || 'AI request failed' },
+      { error: 'Something went wrong. Please try again.' },
       { status: 500 }
     )
   }

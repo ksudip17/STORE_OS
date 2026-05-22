@@ -7,7 +7,6 @@ export async function getAllTransactions() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
 
-  // Get all store IDs for this user
   const { data: stores } = await supabase
     .from('stores')
     .select('id, name')
@@ -15,7 +14,7 @@ export async function getAllTransactions() {
 
   if (!stores?.length) return []
 
-  // Get all customers in those stores
+  // Fix: guard before .in() to prevent empty array sending all rows
   const { data: customers } = await supabase
     .from('customers')
     .select('id, name, phone, store_id')
@@ -23,7 +22,6 @@ export async function getAllTransactions() {
 
   if (!customers?.length) return []
 
-  // Get all transactions
   const { data: transactions, error } = await supabase
     .from('transactions')
     .select('*')
@@ -32,7 +30,6 @@ export async function getAllTransactions() {
 
   if (error) { console.error(error); return [] }
 
-  // Join customer and store data
   return transactions.map(tx => ({
     ...tx,
     customerName: customers.find(c => c.id === tx.customer_id)?.name ?? '—',
@@ -56,18 +53,27 @@ export async function getAnalyticsData() {
 
   if (!stores?.length) return null
 
-  const { data: customers } = await supabase
-    .from('customers')
-    .select('id, name, balance, store_id')
-    .in('store_id', stores.map(s => s.id))
+  const storeIds = stores.map(s => s.id)
+
+  // Fix: guard every .in() query against empty arrays
+  const { data: customers } = storeIds.length
+    ? await supabase
+        .from('customers')
+        .select('id, name, balance, store_id')
+        .in('store_id', storeIds)
+    : { data: [] }
 
   if (!customers?.length) return null
 
-  const { data: transactions } = await supabase
-    .from('transactions')
-    .select('*')
-    .in('customer_id', customers.map(c => c.id))
-    .order('date', { ascending: true })
+  const customerIds = customers.map(c => c.id)
+
+  const { data: transactions } = customerIds.length
+    ? await supabase
+        .from('transactions')
+        .select('*')
+        .in('customer_id', customerIds)
+        .order('date', { ascending: true })
+    : { data: [] }
 
   // Build last 6 months data
   const months: {
@@ -82,7 +88,7 @@ export async function getAnalyticsData() {
     date.setMonth(date.getMonth() - i)
     const year = date.getFullYear()
     const month = date.getMonth()
-    const label = date.toLocaleDateString('en-IN', {
+    const label = date.toLocaleDateString('en-NP', {
       month: 'short',
       year: '2-digit',
     })
@@ -103,7 +109,6 @@ export async function getAnalyticsData() {
     months.push({ month: label, sales, payments, net: sales - payments })
   }
 
-  // Top 5 customers by due
   const topDue = [...(customers ?? [])]
     .filter(c => c.balance < 0)
     .sort((a, b) => a.balance - b.balance)
@@ -113,7 +118,6 @@ export async function getAnalyticsData() {
       due: Math.abs(c.balance),
     }))
 
-  // Balance distribution
   const dueCount     = customers?.filter(c => c.balance < 0).length ?? 0
   const advanceCount = customers?.filter(c => c.balance > 0).length ?? 0
   const clearCount   = customers?.filter(c => c.balance === 0).length ?? 0

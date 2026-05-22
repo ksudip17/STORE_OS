@@ -1,4 +1,8 @@
 'use client'
+// IMPORTANT: This file uses @react-pdf/renderer which requires a browser environment.
+// Never import this from a Server Component.
+// CustomerPanel.tsx must always remain a 'use client' component.
+
 
 import {
   Document,

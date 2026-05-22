@@ -1,24 +1,18 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-// Realtime for customers in a specific store
 export function useRealtimeStore(storeId: string | null) {
   const router = useRouter()
-
-  const refresh = useCallback(() => {
-    router.refresh()
-  }, [router])
 
   useEffect(() => {
     if (!storeId) return
 
     const supabase = createClient()
 
-    // Subscribe to customer balance changes in this store
-    const customerChannel = supabase
+    const channel = supabase
       .channel(`store-customers-${storeId}`)
       .on(
         'postgres_changes',
@@ -28,10 +22,7 @@ export function useRealtimeStore(storeId: string | null) {
           table: 'customers',
           filter: `store_id=eq.${storeId}`,
         },
-        () => {
-          // When any customer changes — refresh the page data
-          refresh()
-        }
+        () => router.refresh()
       )
       .on(
         'postgres_changes',
@@ -40,29 +31,30 @@ export function useRealtimeStore(storeId: string | null) {
           schema: 'public',
           table: 'transactions',
         },
-        () => {
-          refresh()
-        }
+        () => router.refresh()
       )
       .subscribe()
 
+    // Fix: proper cleanup on unmount prevents memory leaks
     return () => {
-      supabase.removeChannel(customerChannel)
+      supabase.removeChannel(channel)
     }
-  }, [storeId, refresh])
+  }, [storeId, router])
 }
 
-// Realtime for dashboard — watches all stores
 export function useRealtimeDashboard(storeIds: string[]) {
   const router = useRouter()
 
+  // Fix: stable primitive — prevents duplicate subscriptions on array reference change
+  const storeKey = storeIds.join(',')
+
   useEffect(() => {
-    if (!storeIds.length) return
+    if (!storeKey) return
 
     const supabase = createClient()
 
     const channel = supabase
-      .channel('dashboard-realtime')
+      .channel(`dashboard-${storeKey}`)
       .on(
         'postgres_changes',
         {
@@ -83,8 +75,9 @@ export function useRealtimeDashboard(storeIds: string[]) {
       )
       .subscribe()
 
+    // Fix: cleanup on unmount
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [storeIds.join(','), router])
+  }, [storeKey, router])
 }
