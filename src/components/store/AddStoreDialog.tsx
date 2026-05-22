@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Loader2, Plus } from 'lucide-react'
+import { Loader2, Plus, Store } from 'lucide-react'
 import { createStore } from '@/lib/actions/stores'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,10 +14,10 @@ import { Label } from '@/components/ui/label'
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import type { StoreType } from '@/lib/types'
 
 const schema = z.object({
   name: z.string().min(1, 'Store name is required').max(50),
@@ -62,18 +62,39 @@ export default function AddStoreDialog() {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Create New Store</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-2">
+        {/* Fix: DialogTitle for accessibility */}
+        <DialogTitle className="sr-only">Create New Store</DialogTitle>
+
+        {/* Fix: consistent header matching AddCustomerDialog style */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-white/15 rounded-lg flex items-center justify-center">
+              <Store className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-white">
+                Create New Store
+              </h2>
+              <p className="text-xs text-blue-100 mt-0.5">
+                Add a new store to your account
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Form body */}
+        <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-5 space-y-4">
+
           {/* Name */}
           <div className="space-y-1.5">
-            <Label htmlFor="name">Store Name</Label>
+            <Label className="text-xs font-medium text-slate-600">
+              Store Name
+            </Label>
             <Input
-              id="name"
               placeholder="e.g. Main Branch"
+              className="bg-slate-50 border-slate-200 focus:border-blue-400"
               {...register('name')}
             />
             {errors.name && (
@@ -83,11 +104,12 @@ export default function AddStoreDialog() {
 
           {/* Type */}
           <div className="space-y-1.5">
-            <Label htmlFor="type">Store Type</Label>
+            <Label className="text-xs font-medium text-slate-600">
+              Store Type
+            </Label>
             <select
-              id="type"
               {...register('type')}
-              className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:border-blue-400 transition-colors"
             >
               <option value="Retail">Retail</option>
               <option value="Wholesale">Wholesale</option>
@@ -98,33 +120,39 @@ export default function AddStoreDialog() {
 
           {/* Description */}
           <div className="space-y-1.5">
-            <Label htmlFor="description">
+            <Label className="text-xs font-medium text-slate-600">
               Description{' '}
               <span className="text-slate-400 font-normal">(optional)</span>
             </Label>
             <Input
-              id="description"
               placeholder="Brief description of this store"
+              className="bg-slate-50 border-slate-200 focus:border-blue-400"
               {...register('description')}
             />
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex gap-2 pt-1">
             <Button
               type="button"
               variant="outline"
+              className="flex-1"
               onClick={() => { reset(); setOpen(false) }}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-60"
+            >
               {isSubmitting && (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               )}
               Create Store
-            </Button>
+            </button>
           </div>
+
         </form>
       </DialogContent>
     </Dialog>
