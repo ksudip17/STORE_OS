@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { Loader2, Plus } from 'lucide-react'
 import { addTransaction } from '@/lib/actions/transactions'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import type { Customer } from '@/lib/types'
 
@@ -92,7 +92,9 @@ export default function AddTransactionDialog({ customer, storeId }: Props) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <div className="mb-4">
-          <h2 className="text-base font-semibold text-slate-900">New Transaction</h2>
+          <DialogTitle className="text-base font-semibold text-slate-900">
+            New Transaction
+          </DialogTitle>
           <p className="text-xs text-slate-400 mt-0.5">{customer.name}</p>
         </div>
         <div className="grid grid-cols-2 gap-2 mb-4">
