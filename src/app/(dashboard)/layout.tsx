@@ -10,15 +10,14 @@ export default async function DashboardLayout({
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-
   if (!user) redirect('/')
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
       <Sidebar user={user} />
       <main className="flex-1 overflow-y-auto relative">
-        {/* Mobile top padding so hamburger doesn't overlap page title */}
-        <div className="h-12 lg:hidden" />
+        {/* Mobile spacer — prevents hamburger overlapping page title */}
+        <div className="h-14 lg:hidden shrink-0" />
         {children}
         <AIChat />
       </main>

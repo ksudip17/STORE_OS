@@ -22,16 +22,15 @@ export default async function DashboardPage() {
 
   return (
     <DashboardRealtime storeIds={stores.map(s => s.id)}>
-      <div className="p-6 max-w-6xl mx-auto">
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto">
 
-        {/* Header — isolated client component to avoid hydration mismatch */}
         <DashboardHeader
           storeCount={stores.length}
           customerCount={customers.length}
         />
 
-        {/* Stats grid — pure display, no interactivity */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* Stats — 2 cols on mobile, 4 on desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <StatCard
             label="Total Stores"
             value={stores.length}
@@ -62,17 +61,15 @@ export default async function DashboardPage() {
           />
         </div>
 
-        {/* Stores section */}
+        {/* Stores */}
         <div>
-          <h2 className="text-base font-semibold text-slate-900 mb-4">
+          <h2 className="text-sm font-semibold text-slate-900 mb-3 sm:mb-4">
             My Stores
           </h2>
-
           {stores.length === 0 ? (
-            // Empty state isolated — contains AddStoreDialog
             <DashboardEmptyState />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {stores.map(store => (
                 <StoreCard
                   key={store.id}

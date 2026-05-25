@@ -7,6 +7,8 @@ import CustomerRow from '@/components/customer/CustomerRow'
 import CustomerPanel from '@/components/customer/CustomerPanel'
 import AddCustomerDialog from '@/components/customer/AddCustomerDialog'
 import StatCard from '@/components/shared/StatCard'
+import StoreActionsMenu from '@/components/store/StoreActionsMenu'
+import { useRealtimeStore } from '@/hooks/useRealtime'
 import {
   ArrowLeft,
   Search,
@@ -14,10 +16,9 @@ import {
   TrendingDown,
   TrendingUp,
   ArrowLeftRight,
+  X,
 } from 'lucide-react'
 import type { Store, Customer, Transaction } from '@/lib/types'
-import StoreActionsMenu from '@/components/store/StoreActionsMenu'
-
 
 type BalanceFilter = 'all' | 'due' | 'advance' | 'clear'
 
@@ -32,14 +33,17 @@ export default function StoreDetailClient({
   customers,
   transactionsByCustomer,
 }: Props) {
-  const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState<BalanceFilter>('all')
+  const [search, setSearch]     = useState('')
+  const [filter, setFilter]     = useState<BalanceFilter>('all')
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const selectedCustomer = customers.find(c => c.id === selectedId) ?? null
-  const selectedTx = selectedId ? (transactionsByCustomer[selectedId] ?? []) : []
+  useRealtimeStore(store.id)
 
-  // Stats
+  const selectedCustomer = customers.find(c => c.id === selectedId) ?? null
+  const selectedTx = selectedId
+    ? (transactionsByCustomer[selectedId] ?? [])
+    : []
+
   const totalDue = useMemo(() =>
     customers.filter(c => c.balance < 0)
       .reduce((s, c) => s + Math.abs(c.balance), 0),
@@ -55,7 +59,6 @@ export default function StoreDetailClient({
     [transactionsByCustomer]
   )
 
-  // Filter + search
   const filtered = useMemo(() => {
     let list = [...customers]
     if (search) {
@@ -74,70 +77,54 @@ export default function StoreDetailClient({
   const filterTabs: { key: BalanceFilter; label: string }[] = [
     { key: 'all',     label: `All (${customers.length})` },
     { key: 'due',     label: `Due (${customers.filter(c => c.balance < 0).length})` },
-    { key: 'advance', label: `Advance (${customers.filter(c => c.balance > 0).length})` },
+    { key: 'advance', label: `Adv (${customers.filter(c => c.balance > 0).length})` },
     { key: 'clear',   label: `Clear (${customers.filter(c => c.balance === 0).length})` },
   ]
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Top bar */}
-      <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
-  <div className="flex items-center gap-3">
-    <Link
-      href="/dashboard"
-      className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-    >
-      <ArrowLeft className="w-4 h-4 text-slate-500" />
-    </Link>
-    <div>
-      <h1 className="text-base font-semibold text-slate-900">
-        {store.name}
-      </h1>
-      <p className="text-xs text-slate-400">{store.type}</p>
-    </div>
-    {/* ← Add this */}
-    <StoreActionsMenu store={store} />
-  </div>
-  <AddCustomerDialog storeId={store.id} />
-</div>
+    <div className="flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen">
 
-      {/* Stats row */}
-      <div className="grid grid-cols-4 gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200 shrink-0">
-        <StatCard
-          label="Customers"
-          value={customers.length}
-          icon={Users}
-        />
-        <StatCard
-          label="Total Due"
-          value={totalDue}
-          icon={TrendingDown}
-          variant="danger"
-          isCurrency
-        />
-        <StatCard
-          label="Total Advance"
-          value={totalAdvance}
-          icon={TrendingUp}
-          variant="success"
-          isCurrency
-        />
-        <StatCard
-          label="Transactions"
-          value={totalTx}
-          icon={ArrowLeftRight}
-        />
+      {/* Top bar */}
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Link
+            href="/dashboard"
+            className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors shrink-0"
+          >
+            <ArrowLeft className="w-4 h-4 text-slate-500" />
+          </Link>
+          <div className="min-w-0">
+            <h1 className="text-sm font-semibold text-slate-900 truncate">
+              {store.name}
+            </h1>
+            <p className="text-xs text-slate-400">{store.type}</p>
+          </div>
+          <StoreActionsMenu store={store} />
+        </div>
+        <AddCustomerDialog storeId={store.id} />
+      </div>
+
+      {/* Stats — 2 cols on mobile, 4 on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 bg-slate-50 border-b border-slate-200 shrink-0">
+        <StatCard label="Customers"   value={customers.length} icon={Users} />
+        <StatCard label="Total Due"   value={totalDue}         icon={TrendingDown} variant="danger"  isCurrency />
+        <StatCard label="Advance"     value={totalAdvance}     icon={TrendingUp}   variant="success" isCurrency />
+        <StatCard label="Transactions" value={totalTx}         icon={ArrowLeftRight} />
       </div>
 
       {/* Main content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left — customer list */}
+      <div className="flex flex-1 overflow-hidden relative">
+
+        {/* Customer list */}
         <div className={cn(
-          'flex flex-col border-r border-slate-200 bg-white transition-all',
-          selectedCustomer ? 'w-[420px] shrink-0' : 'flex-1'
+          'flex flex-col bg-white transition-all duration-200',
+          // Mobile: full width always, panel slides over as overlay
+          // Desktop: shrinks when panel is open
+          'w-full lg:flex-1',
+          selectedCustomer ? 'lg:w-[400px] lg:flex-none' : ''
         )}>
           {/* Search + filters */}
-          <div className="px-4 pt-3 pb-2 border-b border-slate-100">
+          <div className="px-3 sm:px-4 pt-3 pb-2 border-b border-slate-100 shrink-0">
             <div className="relative mb-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input
@@ -145,18 +132,16 @@ export default function StoreDetailClient({
                 placeholder="Search customers..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full pl-8 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-8 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-
-            {/* Filter tabs */}
-            <div className="flex gap-1">
+            <div className="flex gap-1 overflow-x-auto pb-0.5 scrollbar-none">
               {filterTabs.map(tab => (
                 <button
                   key={tab.key}
                   onClick={() => setFilter(tab.key)}
                   className={cn(
-                    'px-2.5 py-1 rounded-md text-xs font-medium transition-colors',
+                    'px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap shrink-0',
                     filter === tab.key
                       ? 'bg-blue-50 text-blue-600'
                       : 'text-slate-500 hover:bg-slate-50'
@@ -201,20 +186,34 @@ export default function StoreDetailClient({
           </div>
         </div>
 
-        {/* Right — customer detail panel */}
+        {/* Customer panel — full screen overlay on mobile, side panel on desktop */}
         {selectedCustomer && (
-          <div className="flex-1 overflow-hidden">
-            <CustomerPanel
-              customer={selectedCustomer}
-              transactions={selectedTx}
-              storeId={store.id}
-              store={store}
-              onClose={() => setSelectedId(null)}
-            />
-          </div>
+          <>
+            {/* Mobile: full screen overlay */}
+            <div className="lg:hidden absolute inset-0 z-10 bg-white overflow-y-auto">
+              <CustomerPanel
+                customer={selectedCustomer}
+                transactions={selectedTx}
+                storeId={store.id}
+                store={store}
+                onClose={() => setSelectedId(null)}
+              />
+            </div>
+
+            {/* Desktop: side panel */}
+            <div className="hidden lg:flex flex-1 overflow-hidden border-l border-slate-200">
+              <CustomerPanel
+                customer={selectedCustomer}
+                transactions={selectedTx}
+                storeId={store.id}
+                store={store}
+                onClose={() => setSelectedId(null)}
+              />
+            </div>
+          </>
         )}
 
-        {/* Empty state when no customer selected */}
+        {/* Desktop empty state when no customer selected */}
         {!selectedCustomer && customers.length > 0 && (
           <div className="hidden lg:flex flex-1 items-center justify-center bg-slate-50">
             <div className="text-center">
