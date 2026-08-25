@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getStoreCustomers } from '@/lib/actions/customers'
-import { getCustomerTransactions } from '@/lib/actions/transactions'
+import { getTransactionsForCustomers } from '@/lib/actions/transactions'
 import StoreDetailClient from './StoreDetailClient'
 
 interface Props {
@@ -30,12 +30,15 @@ export default async function StoreDetailPage({ params }: Props) {
 
   const customers = await getStoreCustomers(storeId)
 
+  // Fix (B2): batch-fetch all transactions in ONE query instead of one
+  // round-trip per customer (N+1).
   const transactionsByCustomer: Record<string, any[]> = {}
-  await Promise.all(
-    customers.map(async (c) => {
-      transactionsByCustomer[c.id] = await getCustomerTransactions(c.id)
-    })
+  const allTransactions = await getTransactionsForCustomers(
+    customers.map(c => c.id)
   )
+  for (const tx of allTransactions) {
+    (transactionsByCustomer[tx.customer_id] ??= []).push(tx)
+  }
 
   return (
     <StoreDetailClient

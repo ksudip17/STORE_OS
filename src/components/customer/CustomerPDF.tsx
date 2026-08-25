@@ -223,7 +223,7 @@ function KhataDocument({ customer, transactions, store }: Props) {
           ]}>
             {customer.balance === 0
               ? 'Clear'
-              : `₹${Math.abs(customer.balance).toLocaleString('en-IN')}`
+              : `Rs. ${Math.abs(customer.balance).toLocaleString('en-NP')}`
             }
           </Text>
         </View>
@@ -266,13 +266,13 @@ function KhataDocument({ customer, transactions, store }: Props) {
                 {tx.quantity ?? '—'}
               </Text>
               <Text style={styles.colRate}>
-                {tx.rate ? `₹${tx.rate}` : '—'}
+                {tx.rate ? `Rs. ${tx.rate}` : '—'}
               </Text>
               <Text style={[
                 styles.colAmount,
                 tx.type === 'sale' ? styles.saleText : styles.paymentText
               ]}>
-                {tx.type === 'sale' ? '+' : '-'}₹{tx.amount.toLocaleString('en-IN')}
+                {tx.type === 'sale' ? '+' : '-'}Rs. {tx.amount.toLocaleString('en-NP')}
               </Text>
             </View>
           ))}

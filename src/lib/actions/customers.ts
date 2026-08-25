@@ -2,8 +2,12 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
 
 async function verifyStoreOwnership(storeId: string) {
+  if (!z.string().uuid().safeParse(storeId).success) {
+    throw new Error('Invalid store')
+  }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
@@ -43,6 +47,14 @@ export async function getStoreCustomers(storeId: string) {
   return data
 }
 
+const createCustomerSchema = z.object({
+  store_id: z.string().uuid(),
+  name: z.string().trim().min(1, 'Name is required').max(100),
+  phone: z.string().trim().max(20).optional().default(''),
+  address: z.string().trim().max(200).optional().default(''),
+  initial_balance: z.number().finite().min(-100000000).max(100000000).optional().default(0),
+})
+
 export async function createCustomer(formData: {
   store_id: string
   name: string
@@ -50,30 +62,49 @@ export async function createCustomer(formData: {
   address: string
   initial_balance?: number
 }) {
-  await verifyStoreOwnership(formData.store_id)
+  // Fix (A7): validate server-side.
+  const parsed = createCustomerSchema.safeParse(formData)
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? 'Invalid input')
+  }
+  const { store_id, name, phone, address, initial_balance } = parsed.data
+
+  await verifyStoreOwnership(store_id)
 
   const supabase = await createClient()
   const { error } = await supabase
     .from('customers')
     .insert({
-      store_id: formData.store_id,
-      name: formData.name,
-      phone: formData.phone || null,
-      address: formData.address || null,
-      balance: formData.initial_balance ?? 0,
+      store_id,
+      name,
+      phone: phone || null,
+      address: address || null,
+      balance: initial_balance,
     })
 
   if (error) throw new Error(error.message)
-  revalidatePath(`/store/${formData.store_id}`)
+  revalidatePath(`/store/${store_id}`)
   revalidatePath('/customers')
   revalidatePath('/dashboard')
 }
+
+const updateCustomerSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(100),
+  phone: z.string().trim().max(20).optional().default(''),
+  address: z.string().trim().max(200).optional().default(''),
+})
 
 export async function updateCustomer(
   customerId: string,
   storeId: string,
   formData: { name: string; phone: string; address: string }
 ) {
+  // Fix (A7): validate server-side.
+  const parsed = updateCustomerSchema.safeParse(formData)
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? 'Invalid input')
+  }
+
   await verifyStoreOwnership(storeId)
 
   const supabase = await createClient()
@@ -91,9 +122,9 @@ export async function updateCustomer(
   const { error } = await supabase
     .from('customers')
     .update({
-      name: formData.name,
-      phone: formData.phone || null,
-      address: formData.address || null,
+      name: parsed.data.name,
+      phone: parsed.data.phone || null,
+      address: parsed.data.address || null,
     })
     .eq('id', customerId)
 

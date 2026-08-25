@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button'
 import { AlertTriangle } from 'lucide-react'
 
 export default function DashboardError({
-  error,
   reset,
 }: {
   error: Error
@@ -19,7 +18,9 @@ export default function DashboardError({
         <h2 className="text-base font-semibold text-slate-900 mb-1">
           Failed to load dashboard
         </h2>
-        <p className="text-sm text-slate-500 mb-4">{error.message}</p>
+        <p className="text-sm text-slate-500 mb-4">
+          Something went wrong. Please try again.
+        </p>
         <Button size="sm" onClick={reset}>Retry</Button>
       </div>
     </div>

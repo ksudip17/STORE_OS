@@ -64,6 +64,7 @@ function SidebarContent({
         {onClose && (
           <button
             onClick={onClose}
+            aria-label="Close menu"
             className="p-1.5 rounded-lg hover:bg-slate-100 lg:hidden"
           >
             <X className="w-4 h-4 text-slate-500" />
@@ -131,6 +132,7 @@ function SidebarContent({
           </div>
           <button
             onClick={handleSignOut}
+            aria-label="Sign out"
             className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors shrink-0"
             title="Sign out"
           >

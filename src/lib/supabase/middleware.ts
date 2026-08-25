@@ -27,12 +27,20 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Redirect unauthenticated users to login
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/') === false &&
-    request.nextUrl.pathname !== '/'
-  ) {
+  // Allow unauthenticated access to these public paths — importantly the
+  // OAuth callback, which has NO session yet (the code has not been
+  // exchanged), so it must never be redirected to '/'.
+  const pathname = request.nextUrl.pathname
+  const isPublicPath =
+    pathname === '/' ||
+    pathname.startsWith('/auth/callback') ||
+    pathname.startsWith('/api/')
+
+  if (!user && !isPublicPath) {
+    // API routes should return 401 JSON, not a 307 redirect to '/'.
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)

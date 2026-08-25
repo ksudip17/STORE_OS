@@ -40,7 +40,7 @@ export default function CustomerPanel({
   async function handleFullPay() {
     setPaying(true)
     try {
-      await addFullPayment(customer.id, customer.balance, storeId)
+      await addFullPayment(customer.id)
       toast.success('Balance cleared!')
       router.refresh()
     } catch (err: any) {

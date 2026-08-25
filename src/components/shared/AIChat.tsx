@@ -65,6 +65,7 @@ export default function AIChat() {
           open && 'scale-0 opacity-0'
         )}
         title="AI Assistant"
+        aria-label="Open AI Assistant"
       >
         <Sparkles className="w-5 h-5 text-white" />
       </button>
@@ -96,6 +97,7 @@ export default function AIChat() {
           <div className="flex items-center gap-1">
             <button
               onClick={clearChat}
+              aria-label="Clear chat"
               className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
               title="Clear chat"
             >
@@ -103,6 +105,7 @@ export default function AIChat() {
             </button>
             <button
               onClick={() => setOpen(false)}
+              aria-label="Close AI Assistant"
               className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
             >
               <X className="w-3.5 h-3.5 text-white/70" />
