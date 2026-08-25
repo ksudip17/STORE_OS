@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Loader2, UserPlus, MapPin, Phone, User, IndianRupee } from 'lucide-react'
+import { Loader2, UserPlus, MapPin, Phone, User, Wallet } from 'lucide-react'
 import { createCustomer } from '@/lib/actions/customers'
 import { Button } from '@/components/ui/button'
 import {
@@ -219,7 +219,7 @@ export default function AddCustomerDialog({ storeId }: { storeId: string }) {
                   ? 'bg-red-50 border-red-200'
                   : 'bg-green-50 border-green-200'
               )}>
-                <IndianRupee className={cn(
+                <Wallet className={cn(
                   'w-4 h-4 shrink-0',
                   balType === 'due' ? 'text-red-400' : 'text-green-400'
                 )} />
