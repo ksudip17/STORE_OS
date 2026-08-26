@@ -26,11 +26,11 @@ export default function StoreCard({ store, customers }: Props) {
 
   return (
     <Link href={`/store/${store.id}`}>
-      <div className="bg-white border border-slate-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer group">
+      <div className="bg-white border border-slate-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
-          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-            <Store className="w-5 h-5 text-blue-600" />
+          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-700 transition-colors">
+            <Store className="w-5 h-5 text-white" />
           </div>
           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${TYPE_COLORS[store.type] ?? 'bg-slate-100 text-slate-600'}`}>
             {store.type}
@@ -38,7 +38,7 @@ export default function StoreCard({ store, customers }: Props) {
         </div>
 
         {/* Info */}
-        <h3 className="font-semibold text-slate-900 text-sm mb-0.5">
+        <h3 className="font-semibold text-slate-900 text-sm mb-0.5 group-hover:text-blue-700 transition-colors">
           {store.name}
         </h3>
         <p className="text-xs text-slate-400 mb-4 line-clamp-1">
@@ -47,7 +47,7 @@ export default function StoreCard({ store, customers }: Props) {
 
         {/* Stats */}
         <div className="flex items-center gap-1 text-xs text-slate-500 mb-3">
-          <Users className="w-3.5 h-3.5" />
+          <Users className="w-3.5 h-3.5 text-blue-500" />
           <span>{customers.length} customers</span>
         </div>
 
